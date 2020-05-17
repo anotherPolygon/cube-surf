@@ -13,6 +13,7 @@ public class PlayerMovement : MonoBehaviour
     public float maxAcceleration = 30;
     public float maxSpeed = 100;
     public float changesDuration = 1;
+    public float playerFriction = 0.02f;
 
     private Rigidbody playerBody;
     private Material playerMaterial;
@@ -44,7 +45,7 @@ public class PlayerMovement : MonoBehaviour
     private void HandleState()
     {
         m_canAccelerate = m_isTouchingGround | m_isTouchingObstacle;
-        m_isTryingToAccelerate = Input.GetAxis("Vertical") != 0;
+        m_isTryingToAccelerate = m_verticalInput != 0;
 
         HandleColor();
     }
@@ -89,19 +90,13 @@ public class PlayerMovement : MonoBehaviour
         if (m_canAccelerate)
         {
             m_currentAcceleration = m_verticalInput * accelerationSpeed;
+            m_currentSpeed += m_currentAcceleration;
+            m_currentSpeed *= (1-playerFriction);
         } else {
             m_currentAcceleration = 0;
-        }
-
-        if (m_canAccelerate)
-        {
-            m_currentSpeed += m_currentAcceleration;
-        }
-        else
-        {
             m_currentSpeed = 0;
         }
-        
+        m_currentSpeed = Mathf.Round(m_currentSpeed); // to round 2 digits after dot
         m_currentSpeed = Mathf.Clamp(m_currentSpeed, -maxSpeed, maxSpeed);
     }
 
@@ -118,9 +113,6 @@ public class PlayerMovement : MonoBehaviour
         playerMaterial = GetComponent<Material>();
         playerRenderer = GetComponent<Renderer>();
         childRenderers = GetComponentsInChildren<Renderer>();
-
-        //leftSail = GameObject.Find("LeftSail");
-        //rightSail = GameObject.Find("RightSail");
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -153,7 +145,6 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         GetInput();
-        Debug.Log(m_horizontalInput);
         HandleState();
         Steer();
         Accelerate();
